@@ -1,2 +1,2 @@
-# terneo_thermostat
-Home Assistant, component for Terneo thermostat
+# Terneo Thermostat
+Terneo Thermostat component for Home Assistant
