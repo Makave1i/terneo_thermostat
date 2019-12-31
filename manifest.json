@@ -1,0 +1,8 @@
+{
+  "domain": "terneo_thermostat",
+  "name": "Terneo Thermostat",
+  "documentation": "https://github.com/Makave1i/terneo_thermostat",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": []
+}
