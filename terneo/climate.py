@@ -34,7 +34,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_SERIAL): cv.string,
         vol.Required(CONF_HOST): cv.string,
-        vol.Optional(CONF_NAME, default="Thermostat"): cv.string,
+        vol.Optional(CONF_NAME, default="Terneo"): cv.string,
         vol.Optional(CONF_PORT, default=80): cv.port,
         vol.Inclusive(CONF_USERNAME, "authentication"): cv.string,
         vol.Inclusive(CONF_PASSWORD, "authentication"): cv.string,
@@ -42,7 +42,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE
-SUPPORT_HVAC = [HVAC_MODE_HEAT, HVAC_MODE_HEAT, HVAC_MODE_OFF]
+SUPPORT_HVAC = [HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_OFF]
 
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -86,10 +86,11 @@ class ThermostatDevice(ClimateDevice):
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
         """
-        if self._mode == 3:
-            return HVAC_MODE_HEAT
-        if self._mode == 0:
-            return HVAC_MODE_AUTO
+        if type(self._mode) == int:
+            if self._mode == 3:
+                return HVAC_MODE_HEAT
+            if self._mode == 0:
+                return HVAC_MODE_AUTO
         return HVAC_MODE_OFF
 
     @property
@@ -112,11 +113,11 @@ class ThermostatDevice(ClimateDevice):
     @property
     def hvac_action(self):
         """Return current hvac i.e. heat, cool, idle."""
-        if not self._mode:
-            return CURRENT_HVAC_OFF
-        if self._state:
-            return CURRENT_HVAC_HEAT
-        return CURRENT_HVAC_IDLE
+        if type(self._mode) == int:
+            if self._state:
+                return CURRENT_HVAC_HEAT
+            return CURRENT_HVAC_IDLE
+        return CURRENT_HVAC_OFF
 
     @property
     def current_temperature(self):
@@ -134,7 +135,6 @@ class ThermostatDevice(ClimateDevice):
             self.thermostat.mode = 0
         elif hvac_mode == HVAC_MODE_HEAT:
             self.thermostat.mode = 1
-            self.thermostat.turn_on()
         elif hvac_mode == HVAC_MODE_OFF:
             self.thermostat.turn_off()
 
@@ -145,6 +145,7 @@ class ThermostatDevice(ClimateDevice):
 
     def update(self):
         """Update local state."""
+        self.thermostat.update()
         self._setpoint = self.thermostat.setpoint
         self._temperature = self.thermostat.temperature
         self._state = self.thermostat.state

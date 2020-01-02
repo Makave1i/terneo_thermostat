@@ -1,6 +1,11 @@
 import sys
 import requests
+import logging
+import time
+
 from requests.auth import HTTPBasicAuth
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Thermostat:
@@ -32,12 +37,17 @@ class Thermostat:
 
         self.sn = serialnumber
         self._base_url = "http://{}:{}/{{endpoint}}.cgi".format(host, port)
+        self._setpoint = None
+        self._temperature = None
+        self._mode = None
+        self._state = None
+        self._last_request = time.time()
+        self._in_progress = False
         try:
             r = requests.get(self._base_url.format(endpoint="api.html")[:-4])
             assert r.status_code == 200
         except Exception as e:
-            raise type(e)("Connection to Thermostat failed with: {}".format(str(e))
-                         ).with_traceback(sys.exc_info()[2])
+            raise type(e)("Connection to Thermostat failed with: {}".format(str(e))).with_traceback(sys.exc_info()[2])
 
     def _get_url(self, endpoint):
         return self._base_url.format(endpoint=endpoint)
@@ -78,40 +88,72 @@ class Thermostat:
         """
         kwergs = {'auth': self.auth}
 
-        if 'params' in kwargs:
-            kwargs['params']['sn'] = self.sn
+        if 'json' in kwargs:
+            kwargs['json']['sn'] = self.sn
         kwergs.update(kwargs)
+        # _LOGGER.info(f'last request time - {self._last_request} - {time.time() - self._last_request}: {kwargs}')
+        if time.time() - self._last_request < 1 or self._in_progress:
+            time.sleep(1)
 
-        r = requests.post(self._get_url(endpoint), **kwergs)
+        try:
+            r = requests.post(self._get_url(endpoint), **kwergs)
+        except Exception as e:
+            self._last_request = time.time()
+            _LOGGER.error(e)
+            return False
 
-        return r
+        content = r.json()
+        self._last_request = time.time()
+
+        return content
 
     def status(self):
         """
         Get the status dictionary from the thermostat
         """
-        r = self.post(params={"cmd": 4})
-        return r.json()
+        r = self.post(json={"cmd": 4})
+        return r
+
+    def is_on(self):
+        r = self.post(json={"cmd": 1})
+        if r and 'par' in r:
+            for a in r['par']:
+                if a[0] == 125:
+                    return a[2] == "0"
 
     @property
     def temperature(self):
         """
         Current value of the temperature sensor in C
         """
-        return float(self.status()['t.1']) / 100
+        if self._temperature is None:
+            data = self.status()
+            if data:
+                self._temperature = self.get_temperature(data)
+        return self._temperature
+
+    def get_temperature(self, data):
+        return float(data['t.1']) / 16
 
     @property
     def setpoint(self):
         """
         Current thermostat setpoint in C
         """
-        return float(self.status()['t.5']) / 100
+        if self._setpoint is None:
+            data = self.status()
+            if data:
+                self._setpoint = self.get_setpoint(data)
+        return self._setpoint
 
     @setpoint.setter
     def setpoint(self, val):
-        # val = int(val * 100)
-        setpoint = str(val).encode()
-        self.post(par=[[5,1,setpoint]])
+        setpoint = str(val)
+        self._setpoint = float(val)
+        self.post(json=dict(par=[[125, 7, "0"], [2, 2, "1"], [5, 1, setpoint]]))
+
+    def get_setpoint(self, data):
+        return float(data['t.5']) / 16
 
     @property
     def mode(self):
@@ -122,14 +164,26 @@ class Thermostat:
         mode : `int`
             `0` for schedule mode, `3` for manual mode and `4` for away mode.
         """
-        return self.status()['m.1']
+        if self._mode is None:
+            data = self.status()
+            if data:
+                self._mode = self.get_mode(data)
+        return self._mode
+
+    def get_mode(self, data):
+        if not self.is_on():
+            return False
+        return int(data['m.1'])
 
     @mode.setter
     def mode(self, val):
         val = int(val)
         if val not in [0, 1]:
             raise ValueError("mode must be either 0,1")
-        self.post(par=[[2,2,str(val).encode()]])
+
+        self._mode = 3 if val == 1 else 0
+
+        self.post(json=dict(par=[[125, 7, "0"], [2, 2, str(val)]]))
 
     @property
     def state(self):
@@ -140,16 +194,31 @@ class Thermostat:
         state : `bool`
             returns `True` if the relay is on and `False` if the relay is off.
         """
-        return bool(self.status()['f.0'])
+        if self._state is None:
+            data = self.status()
+            if data:
+                self._state = self.get_state(data)
+        return self._state
 
-    def switch(self):
-        """
-        Change the state of the relay.
-        """
-        return self.post(par=[[125, 7, "0" if int(not self.state) else "1"]])
+    def get_state(self, data):
+        return int(data['f.0']) == 1
 
     def turn_on(self):
-        return self.post(par=[[125, 7, "0"]])
+        return self.post(json=dict(par=[[125, 7, "0"]]))
 
     def turn_off(self):
-        return self.post(par=[[125, 7, "1"]])
+        self._mode = False
+        return self.post(json=dict(par=[[125, 7, "1"]]))
+
+    def update(self):
+        if time.time() - self._last_request > 10:
+            data = self.status()
+        else:
+            time.sleep(1)
+            data = self.status()
+
+        if data:
+            self._setpoint = self.get_setpoint(data)
+            self._temperature = self.get_temperature(data)
+            self._mode = self.get_mode(data)
+            self._state = self.get_state(data)
