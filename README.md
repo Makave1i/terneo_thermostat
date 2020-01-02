@@ -10,6 +10,7 @@ block removing - https://terneo-api.readthedocs.io/ru/latest/en/safety.html
 put `terneo` folder to the `custom_components`
 
 config example (`configuration.yaml`):
+
 serial number can be found on the page  http://`device_api`/index.html
 
 ```
