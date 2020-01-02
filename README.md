@@ -11,7 +11,7 @@ put `terneo` folder to the `custom_components`
 
 config example (`configuration.yaml`):
 
-serial number can be found on the page  http://`device_api`/index.html
+serial number can be found on the page  http://`{device_ip}`/index.html
 
 ```
 climate:
