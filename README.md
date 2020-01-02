@@ -1,6 +1,8 @@
 # Terneo Thermostat
 Terneo Thermostat component for Home Assistant
 
+required device firmwavre version 2.3
+
 https://terneo-api.readthedocs.io/ru/latest/
 
 >In firmware version 2.3, the ability to control the local network by default blocked for security reasons.
