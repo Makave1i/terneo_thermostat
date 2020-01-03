@@ -1,7 +1,7 @@
 # Terneo Thermostat
 Terneo Thermostat component for Home Assistant
 
-required device firmwavre version 2.3
+required device firmware version 2.3
 
 https://terneo-api.readthedocs.io/ru/latest/
 
