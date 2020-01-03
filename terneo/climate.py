@@ -88,11 +88,11 @@ class ThermostatDevice(ClimateDevice):
         Need to be one of HVAC_MODE_*.
         """
 
+        if self._mode == -1:
+            return HVAC_MODE_OFF
         if self._mode == 3:
             return HVAC_MODE_HEAT
-        if self._mode == 0:
-            return HVAC_MODE_AUTO
-        return HVAC_MODE_OFF
+        return HVAC_MODE_AUTO
 
     @property
     def hvac_modes(self):

@@ -105,7 +105,7 @@ class Thermostat:
         if content.get('status', '') == 'timeout':
             _LOGGER.error(f'terneo timout: {kwargs}')
             return False
-        
+
         return content
 
     def status(self):
@@ -156,7 +156,6 @@ class Thermostat:
     @setpoint.setter
     def setpoint(self, val):
         setpoint = str(val)
-        self._setpoint = float(val)
         self.post(json=dict(par=[[125, 7, "0"], [2, 2, "1"], [5, 1, setpoint]]))
 
     @staticmethod
@@ -195,8 +194,6 @@ class Thermostat:
         if val not in [0, 1]:
             raise ValueError("mode must be either 0,1")
 
-        self._mode = 3 if val == 1 else 0
-
         self.post(json=dict(par=[[125, 7, "0"], [2, 2, str(val)]]))
 
     @property
@@ -222,7 +219,6 @@ class Thermostat:
         return self.post(json=dict(par=[[125, 7, "0"]]))
 
     def turn_off(self):
-        self._mode = False
         return self.post(json=dict(par=[[125, 7, "1"]]))
 
     def update(self):
