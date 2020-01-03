@@ -119,7 +119,7 @@ class ThermostatDevice(ClimateDevice):
         if self._state:
             return CURRENT_HVAC_HEAT
         return CURRENT_HVAC_IDLE
-        
+
     @property
     def current_temperature(self):
         """Return the current temperature."""

@@ -90,8 +90,9 @@ class Thermostat:
 
         if 'json' in kwargs:
             kwargs['json']['sn'] = self.sn
+            if kwargs['json'].get('cmd', 0) == 1:   # for firmware 2.3
+                time.sleep(1)
         kwergs.update(kwargs)
-        # _LOGGER.info(f'terneo data: {kwargs}')
 
         try:
             r = requests.post(self._get_url(endpoint), **kwergs)
@@ -100,10 +101,11 @@ class Thermostat:
             return False
 
         content = r.json()
-        # _LOGGER.info(f'terneo response: {content}')
 
         if content.get('status', '') == 'timeout':
+            _LOGGER.error(f'terneo timout: {kwargs}')
             return False
+        
         return content
 
     def status(self):
@@ -114,11 +116,16 @@ class Thermostat:
         return r
 
     def is_on(self):
+        """
+        getting power on/off for firmware 2.3
+        :return: bool
+        """
         r = self.post(json={"cmd": 1})
         if r and 'par' in r:
             for a in r['par']:
                 if a[0] == 125:
                     return a[2] == "0"
+        return False
 
     @property
     def temperature(self):
@@ -131,7 +138,8 @@ class Thermostat:
                 self._temperature = self.get_temperature(data)
         return self._temperature
 
-    def get_temperature(self, data):
+    @staticmethod
+    def get_temperature(data):
         return float(data['t.1']) / 16
 
     @property
@@ -151,7 +159,8 @@ class Thermostat:
         self._setpoint = float(val)
         self.post(json=dict(par=[[125, 7, "0"], [2, 2, "1"], [5, 1, setpoint]]))
 
-    def get_setpoint(self, data):
+    @staticmethod
+    def get_setpoint(data):
         return float(data['t.5']) / 16
 
     @property
@@ -170,7 +179,7 @@ class Thermostat:
         return self._mode
 
     def get_mode(self, data):
-        if 'f.16' in data:
+        if 'f.16' in data:  # in firmware 2.4 was added new flag for power off/on
             is_on = int(data['f.16']) == 0
         else:
             is_on = self.is_on()
@@ -205,7 +214,8 @@ class Thermostat:
                 self._state = self.get_state(data)
         return self._state
 
-    def get_state(self, data):
+    @staticmethod
+    def get_state(data):
         return int(data['f.0']) == 1
 
     def turn_on(self):
