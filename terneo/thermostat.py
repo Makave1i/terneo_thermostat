@@ -36,13 +36,13 @@ class Thermostat:
             self.auth = None
 
         self.sn = serialnumber
+
         self._base_url = "http://{}:{}/{{endpoint}}.cgi".format(host, port)
         self._setpoint = None
         self._temperature = None
         self._mode = None
         self._state = None
-        self._last_request = time.time()
-        self._in_progress = False
+
         try:
             r = requests.get(self._base_url.format(endpoint="api.html")[:-4])
             assert r.status_code == 200
@@ -91,20 +91,19 @@ class Thermostat:
         if 'json' in kwargs:
             kwargs['json']['sn'] = self.sn
         kwergs.update(kwargs)
-        # _LOGGER.info(f'last request time - {self._last_request} - {time.time() - self._last_request}: {kwargs}')
-        if time.time() - self._last_request < 1 or self._in_progress:
-            time.sleep(1)
+        # _LOGGER.info(f'terneo data: {kwargs}')
 
         try:
             r = requests.post(self._get_url(endpoint), **kwergs)
         except Exception as e:
-            self._last_request = time.time()
             _LOGGER.error(e)
             return False
 
         content = r.json()
-        self._last_request = time.time()
+        # _LOGGER.info(f'terneo response: {content}')
 
+        if content.get('status', '') == 'timeout':
+            return False
         return content
 
     def status(self):
@@ -171,9 +170,15 @@ class Thermostat:
         return self._mode
 
     def get_mode(self, data):
-        if not self.is_on():
-            return False
-        return int(data['m.1'])
+        if 'f.16' in data:
+            is_on = int(data['f.16']) == 0
+        else:
+            is_on = self.is_on()
+
+        if not is_on:
+            return -1
+        else:
+            return int(data['m.1'])
 
     @mode.setter
     def mode(self, val):
@@ -211,12 +216,7 @@ class Thermostat:
         return self.post(json=dict(par=[[125, 7, "1"]]))
 
     def update(self):
-        if time.time() - self._last_request > 10:
-            data = self.status()
-        else:
-            time.sleep(1)
-            data = self.status()
-
+        data = self.status()
         if data:
             self._setpoint = self.get_setpoint(data)
             self._temperature = self.get_temperature(data)

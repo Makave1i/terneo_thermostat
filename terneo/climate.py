@@ -4,6 +4,7 @@ import logging
 from .thermostat import Thermostat
 import requests
 import voluptuous as vol
+from typing import Optional
 
 from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateDevice
 from homeassistant.components.climate.const import (
@@ -63,7 +64,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 
 class ThermostatDevice(ClimateDevice):
-    """Interface class for the oemthermostat module."""
+    """Interface class for the thermostat module."""
 
     def __init__(self, thermostat, name):
         """Initialize the device."""
@@ -86,11 +87,11 @@ class ThermostatDevice(ClimateDevice):
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
         """
-        if type(self._mode) == int:
-            if self._mode == 3:
-                return HVAC_MODE_HEAT
-            if self._mode == 0:
-                return HVAC_MODE_AUTO
+
+        if self._mode == 3:
+            return HVAC_MODE_HEAT
+        if self._mode == 0:
+            return HVAC_MODE_AUTO
         return HVAC_MODE_OFF
 
     @property
@@ -113,12 +114,12 @@ class ThermostatDevice(ClimateDevice):
     @property
     def hvac_action(self):
         """Return current hvac i.e. heat, cool, idle."""
-        if type(self._mode) == int:
-            if self._state:
-                return CURRENT_HVAC_HEAT
-            return CURRENT_HVAC_IDLE
-        return CURRENT_HVAC_OFF
-
+        if self._mode == -1:
+            return CURRENT_HVAC_OFF
+        if self._state:
+            return CURRENT_HVAC_HEAT
+        return CURRENT_HVAC_IDLE
+        
     @property
     def current_temperature(self):
         """Return the current temperature."""
@@ -128,6 +129,11 @@ class ThermostatDevice(ClimateDevice):
     def target_temperature(self):
         """Return the temperature we try to reach."""
         return self._setpoint
+
+    @property
+    def target_temperature_step(self) -> Optional[float]:
+        """Return the supported step of target temperature."""
+        return 1.0
 
     def set_hvac_mode(self, hvac_mode):
         """Set new target hvac mode."""
