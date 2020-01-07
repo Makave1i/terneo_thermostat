@@ -43,6 +43,8 @@ class Thermostat:
         self._mode = None
         self._state = None
 
+        self._last_request = time.time()
+
         try:
             r = requests.get(self._base_url.format(endpoint="api.html")[:-4])
             assert r.status_code == 200
@@ -88,18 +90,22 @@ class Thermostat:
         """
         kwergs = {'auth': self.auth}
 
-        if 'json' in kwargs:
-            kwargs['json']['sn'] = self.sn
-            if kwargs['json'].get('cmd', 0) == 1:   # for firmware 2.3
-                time.sleep(1)
         kwergs.update(kwargs)
 
+        start_time = time.time()
+        if start_time - self._last_request < 1:
+            time.sleep(1)
+
+        # _LOGGER.error(f"terneo request start time: {start_time}. cmd - {kwargs['json'].get('cmd')}; pars - {kwargs['json'].get('par')}")
         try:
-            r = requests.post(self._get_url(endpoint), **kwergs)
+            r = requests.post(self._get_url(endpoint), timeout=5, **kwergs)
         except Exception as e:
+            self._last_request = time.time()
             _LOGGER.error(e)
             return False
-
+        end_time = time.time()
+        # _LOGGER.error(f'terneo request end time: {end_time}. diff: {end_time - start_time}')
+        self._last_request = end_time
         content = r.json()
 
         if content.get('status', '') == 'timeout':
