@@ -6,7 +6,7 @@ import requests
 import voluptuous as vol
 from typing import Optional
 
-from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateDevice
+from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
 from homeassistant.components.climate.const import (
     CURRENT_HVAC_HEAT,
     CURRENT_HVAC_IDLE,
@@ -63,7 +63,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     add_entities((ThermostatDevice(therm, name),), True)
 
 
-class ThermostatDevice(ClimateDevice):
+class ThermostatDevice(ClimateEntity):
     """Interface class for the thermostat module."""
 
     def __init__(self, thermostat, name):

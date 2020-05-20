@@ -162,7 +162,7 @@ class Thermostat:
     @setpoint.setter
     def setpoint(self, val):
         setpoint = str(val)
-        self.post(json=dict(par=[[125, 7, "0"], [2, 2, "1"], [5, 1, setpoint]]))
+        self.post(json=dict(sn=self.sn, par=[[125, 7, "0"], [2, 2, "1"], [5, 1, setpoint]]))
 
     @staticmethod
     def get_setpoint(data):
@@ -200,7 +200,7 @@ class Thermostat:
         if val not in [0, 1]:
             raise ValueError("mode must be either 0,1")
 
-        self.post(json=dict(par=[[125, 7, "0"], [2, 2, str(val)]]))
+        self.post(json=dict(sn=self.sn, par=[[125, 7, "0"], [2, 2, str(val)]]))
 
     @property
     def state(self):
@@ -222,10 +222,10 @@ class Thermostat:
         return int(data['f.0']) == 1
 
     def turn_on(self):
-        return self.post(json=dict(par=[[125, 7, "0"]]))
+        return self.post(json=dict(sn=self.sn, par=[[125, 7, "0"]]))
 
     def turn_off(self):
-        return self.post(json=dict(par=[[125, 7, "1"]]))
+        return self.post(json=dict(sn=self.sn, par=[[125, 7, "1"]]))
 
     def update(self):
         data = self.status()
