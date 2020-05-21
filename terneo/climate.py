@@ -135,6 +135,11 @@ class ThermostatDevice(ClimateEntity):
         """Return the supported step of target temperature."""
         return 1.0
 
+    @property
+    def unique_id(self):
+        """Return unique ID based on Terneo serial number."""
+        return self.thermostat.sn
+
     def set_hvac_mode(self, hvac_mode):
         """Set new target hvac mode."""
         if hvac_mode == HVAC_MODE_AUTO:
