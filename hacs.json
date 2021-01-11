@@ -1,5 +1,4 @@
 {
-    "name": "Terneo Thermostat",
-    "render_readme": true,
-    "domain": "terneo"
+    "name": "Terneo",
+    "render_readme": true
 }
