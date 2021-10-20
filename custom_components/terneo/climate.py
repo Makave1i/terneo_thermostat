@@ -136,6 +136,16 @@ class ThermostatDevice(ClimateEntity):
         return 1.0
 
     @property
+    def max_temp(self) -> Optional[int]:
+        """Return the maximum temperature."""
+        return 45
+
+    @property
+    def min_temp(self) -> Optional[int]:
+        """Return the minimum temperature."""
+        return 5
+
+    @property
     def unique_id(self):
         """Return unique ID based on Terneo serial number."""
         return self.thermostat.sn
