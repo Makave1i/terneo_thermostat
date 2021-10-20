@@ -106,7 +106,12 @@ class Thermostat:
         end_time = time.time()
         # _LOGGER.error(f'terneo request end time: {end_time}. diff: {end_time - start_time}')
         self._last_request = end_time
-        content = r.json()
+        try:
+            content = r.json()
+        except Exception as e:
+            _LOGGER.error(e)
+            _LOGGER.error("Failed to parse as JSON: " + str(r.content))
+            return False
 
         if content.get('status', '') == 'timeout':
             _LOGGER.error(f'terneo timout: {kwargs}')
