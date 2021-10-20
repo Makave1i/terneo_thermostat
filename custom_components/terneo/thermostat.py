@@ -88,7 +88,7 @@ class Thermostat:
         response : `requests.Response`
             The result of the request.
         """
-        kwergs = {'auth': self.auth, 'sn': self.sn}
+        kwergs = {'auth': self.auth}
 
         kwergs.update(kwargs)
 
@@ -109,7 +109,6 @@ class Thermostat:
         try:
             content = r.json()
         except Exception as e:
-            _LOGGER.error(e)
             _LOGGER.error("Failed to parse as JSON: " + str(r.content))
             return False
 
@@ -123,7 +122,7 @@ class Thermostat:
         """
         Get the status dictionary from the thermostat
         """
-        r = self.post(json={"cmd": 4})
+        r = self.post(json={"cmd": 4, "sn": self.sn})
         return r
 
     def is_on(self):
@@ -131,7 +130,7 @@ class Thermostat:
         getting power on/off for firmware 2.3
         :return: bool
         """
-        r = self.post(json={"cmd": 1})
+        r = self.post(json={"cmd": 1, "sn": self.sn})
         if r and 'par' in r:
             for a in r['par']:
                 if a[0] == 125:
