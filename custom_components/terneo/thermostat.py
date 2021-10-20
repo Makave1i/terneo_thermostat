@@ -88,7 +88,7 @@ class Thermostat:
         response : `requests.Response`
             The result of the request.
         """
-        kwergs = {'auth': self.auth}
+        kwergs = {'auth': self.auth, 'sn': self.sn}
 
         kwergs.update(kwargs)
 
