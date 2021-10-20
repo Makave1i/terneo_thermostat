@@ -2,7 +2,7 @@
   "domain": "terneo",
   "name": "Terneo Thermostat",
   "documentation": "https://github.com/Makave1i/terneo_thermostat",
-  "version": "0.8.2",
+  "version": "0.9",
   "requirements": [
     "requests",
     "voluptuous"
