@@ -4,6 +4,7 @@ import logging
 import time
 
 from requests.auth import HTTPBasicAuth
+from simplejson.errors import JSONDecodeError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -96,7 +97,6 @@ class Thermostat:
         if start_time - self._last_request < 1:
             time.sleep(1)
 
-        # _LOGGER.error(f"terneo request start time: {start_time}. cmd - {kwargs['json'].get('cmd')}; pars - {kwargs['json'].get('par')}")
         try:
             r = requests.post(self._get_url(endpoint), timeout=5, **kwergs)
         except Exception as e:
@@ -104,16 +104,19 @@ class Thermostat:
             _LOGGER.error(e)
             return False
         end_time = time.time()
-        # _LOGGER.error(f'terneo request end time: {end_time}. diff: {end_time - start_time}')
         self._last_request = end_time
         try:
             content = r.json()
+        except JSONDecodeError:
+            return False
         except Exception as e:
-            _LOGGER.error("Failed to parse as JSON: " + str(r.content))
+            _LOGGER.error(e)
             return False
 
         if content.get('status', '') == 'timeout':
-            _LOGGER.error(f'terneo timout: {kwargs}')
+            if 'sn' in kwargs['json']:
+                kwargs['json']['sn'] = '...filtered...'
+            _LOGGER.warning(f'terneo timeout: {kwargs}')
             return False
 
         return content
