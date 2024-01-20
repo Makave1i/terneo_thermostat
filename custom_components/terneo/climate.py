@@ -6,16 +6,13 @@ import requests
 import voluptuous as vol
 from typing import Optional
 
-from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
-from homeassistant.components.climate.const import (
-    CURRENT_HVAC_HEAT,
-    CURRENT_HVAC_IDLE,
-    CURRENT_HVAC_OFF,
-    HVAC_MODE_AUTO,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_OFF,
-    SUPPORT_TARGET_TEMPERATURE,
-)
+from homeassistant.components.climate import (
+    PLATFORM_SCHEMA,
+    ClimateEntity,
+    ClimateEntityFeature,
+    HVACAction,
+    HVACMode
+    )
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     CONF_HOST,
@@ -42,9 +39,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     }
 )
 
-SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE
-SUPPORT_HVAC = [HVAC_MODE_AUTO, HVAC_MODE_HEAT, HVAC_MODE_OFF]
-
+SUPPORT_FLAGS = ClimateEntityFeature.TARGET_TEMPERATURE
+SUPPORT_HVAC = [HVACMode.AUTO, HVACMode.HEAT, HVACMode.OFF]
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Terneo platform."""
@@ -89,10 +85,10 @@ class ThermostatDevice(ClimateEntity):
         """
 
         if self._mode == -1:
-            return HVAC_MODE_OFF
+            return HVACMode.OFF
         if self._mode == 3:
-            return HVAC_MODE_HEAT
-        return HVAC_MODE_AUTO
+            return HVACMode.HEAT
+        return HVACMode.AUTO
 
     @property
     def hvac_modes(self):
@@ -115,10 +111,10 @@ class ThermostatDevice(ClimateEntity):
     def hvac_action(self):
         """Return current hvac i.e. heat, cool, idle."""
         if self._mode == -1:
-            return CURRENT_HVAC_OFF
+            return HVACAction.OFF
         if self._state:
-            return CURRENT_HVAC_HEAT
-        return CURRENT_HVAC_IDLE
+            return HVACAction.HEATING
+        return HVACAction.IDLE
 
     @property
     def current_temperature(self):
@@ -152,11 +148,11 @@ class ThermostatDevice(ClimateEntity):
 
     def set_hvac_mode(self, hvac_mode):
         """Set new target hvac mode."""
-        if hvac_mode == HVAC_MODE_AUTO:
+        if hvac_mode == HVACMode.AUTO:
             self.thermostat.mode = 0
-        elif hvac_mode == HVAC_MODE_HEAT:
+        elif hvac_mode == HVACMode.HEAT:
             self.thermostat.mode = 1
-        elif hvac_mode == HVAC_MODE_OFF:
+        elif hvac_mode == HVACMode.OFF:
             self.thermostat.turn_off()
 
     def set_temperature(self, **kwargs):
