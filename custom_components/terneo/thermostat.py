@@ -43,12 +43,14 @@ class Thermostat:
         self._temperature = None
         self._mode = None
         self._state = None
+        self._available = False
 
         self._last_request = time.time()
 
         try:
             r = requests.get(self._base_url.format(endpoint="api.html")[:-4])
             assert r.status_code == 200
+            self._available = True
         except Exception as e:
             raise type(e)("Connection to Thermostat failed with: {}".format(str(e))).with_traceback(sys.exc_info()[2])
 
@@ -100,6 +102,7 @@ class Thermostat:
         try:
             r = requests.post(self._get_url(endpoint), timeout=5, **kwergs)
         except Exception as e:
+            self._available = False
             self._last_request = time.time()
             _LOGGER.error(e)
             return False
@@ -118,7 +121,8 @@ class Thermostat:
                 kwargs['json']['sn'] = '...filtered...'
             _LOGGER.warning(f'terneo timeout: {kwargs}')
             return False
-
+        
+        self._available = True
         return content
 
     def status(self):
@@ -224,6 +228,10 @@ class Thermostat:
                 self._state = self.get_state(data)
         return self._state
 
+    @property
+    def available(self):
+        return self._available
+    
     @staticmethod
     def get_state(data):
         return int(data['f.0']) == 1

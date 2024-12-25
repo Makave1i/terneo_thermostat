@@ -5,6 +5,7 @@ from .thermostat import Thermostat
 import requests
 import voluptuous as vol
 from typing import Optional
+from homeassistant.const import UnitOfTemperature
 
 from homeassistant.components.climate import (
     PLATFORM_SCHEMA,
@@ -20,7 +21,6 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_PORT,
     CONF_USERNAME,
-    TEMP_CELSIUS,
 )
 import homeassistant.helpers.config_validation as cv
 
@@ -39,7 +39,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     }
 )
 
-SUPPORT_FLAGS = ClimateEntityFeature.TARGET_TEMPERATURE
+SUPPORT_FLAGS = (ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF)
 SUPPORT_HVAC = [HVACMode.AUTO, HVACMode.HEAT, HVACMode.OFF]
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -68,6 +68,7 @@ class ThermostatDevice(ClimateEntity):
         self.thermostat = thermostat
 
         # set up internal state varS
+        self._available = False
         self._state = None
         self._temperature = None
         self._setpoint = None
@@ -105,7 +106,7 @@ class ThermostatDevice(ClimateEntity):
     @property
     def temperature_unit(self):
         """Return the unit of measurement used by the platform."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS
 
     @property
     def hvac_action(self):
@@ -145,6 +146,17 @@ class ThermostatDevice(ClimateEntity):
     def unique_id(self):
         """Return unique ID based on Terneo serial number."""
         return self.thermostat.sn
+    
+    @property
+    def available(self):
+        """Return available status based on device connectivity"""
+        return self.thermostat.available
+
+    def turn_on(self):
+        self.thermostat.turn_on()
+
+    def turn_off(self):
+        self.thermostat.turn_off()
 
     def set_hvac_mode(self, hvac_mode):
         """Set new target hvac mode."""
@@ -167,3 +179,4 @@ class ThermostatDevice(ClimateEntity):
         self._temperature = self.thermostat.temperature
         self._state = self.thermostat.state
         self._mode = self.thermostat.mode
+        self._available = self.thermostat.available
